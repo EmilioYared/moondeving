@@ -2,6 +2,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import SubmitForm from '@/components/auth/SubmitForm'
+import SubmissionStatus from "@/components/submit/SubmissionStatus"
 
 export default async function SubmitPage() {
   const supabase = createServerComponentClient({ cookies })
@@ -38,6 +39,7 @@ export default async function SubmitPage() {
             You have already submitted your application. Please wait for review.
           </p>
         </div>
+        <SubmissionStatus userId={session.user.id} />
       </div>
     )
   }
