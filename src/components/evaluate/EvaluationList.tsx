@@ -15,8 +15,9 @@ interface Submission {
   profile_picture_url: string
   source_code_url: string
   status: 'pending' | 'accepted' | 'rejected'
-  feedback: string | null
+  feedback?: string
   created_at: string
+  isUpdating?: boolean
 }
 
 
@@ -120,6 +121,11 @@ export default function EvaluationList() {
       return;
     }
 
+    // Add a loading state for the specific submission being updated
+    setSubmissions(prev => prev.map(sub => 
+      sub.id === id ? { ...sub, isUpdating: true } : sub
+    ));
+
     try {
       // Update submission in database first
       const { error } = await supabase
@@ -135,7 +141,7 @@ export default function EvaluationList() {
       // Update local state to reflect the change immediately
       setSubmissions(prevSubmissions => 
         prevSubmissions.map(sub => 
-          sub.id === id ? { ...sub, status, feedback } : sub
+          sub.id === id ? { ...sub, status, feedback, isUpdating: false } : sub
         )
       );
 
@@ -177,6 +183,10 @@ export default function EvaluationList() {
         // Note: We don't revert the UI since the database update was successful
       }
     } catch (error: any) {
+      // Also remove loading state on error
+      setSubmissions(prev => prev.map(sub => 
+        sub.id === id ? { ...sub, isUpdating: false } : sub
+      ));
       console.error('Error updating submission:', error);
       toast.error(error.message || 'Failed to update submission');
     }
@@ -184,8 +194,9 @@ export default function EvaluationList() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+        <p className="text-gray-600">Loading submissions...</p>
       </div>
     )
   }
@@ -255,15 +266,35 @@ export default function EvaluationList() {
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       onClick={() => updateSubmission(submission.id, 'accepted')}
-                      className="w-full py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                      disabled={submission.isUpdating}
+                      className={`w-full py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors ${
+                        submission.isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
-                      Welcome to the Team
+                      {submission.isUpdating ? (
+                        <>
+                          <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                          Processing...
+                        </>
+                      ) : (
+                        'Welcome to the Team'
+                      )}
                     </button>
                     <button
                       onClick={() => updateSubmission(submission.id, 'rejected')}
-                      className="w-full py-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                      disabled={submission.isUpdating}
+                      className={`w-full py-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors ${
+                        submission.isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
-                      We Are Sorry
+                      {submission.isUpdating ? (
+                        <>
+                          <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                          Processing...
+                        </>
+                      ) : (
+                        'We Are Sorry'
+                      )}
                     </button>
                   </div>
                 </>

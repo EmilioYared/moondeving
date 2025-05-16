@@ -43,8 +43,16 @@ export default function SubmissionStatus({ userId }: { userId: string }) {
     }
   }, [userId])
 
-  if (loading) return <div>Loading status...</div>
-  if (!submission) return <div>No submission found.</div>
+  if (loading) return (
+    <div className="mt-6 p-4 rounded-lg border bg-gray-50">
+      <div className="flex items-center space-x-3">
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+        <p className="text-gray-600">Loading your submission status...</p>
+      </div>
+    </div>
+  )
+  
+  if (!submission) return <div className="mt-6 p-4 rounded-lg border bg-gray-50 text-gray-500">No submission found.</div>
 
   return (
     <div className="mt-6 p-4 rounded-lg border bg-gray-50">
