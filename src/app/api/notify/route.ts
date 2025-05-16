@@ -6,7 +6,10 @@ import { sendDeveloperNotification } from '@/lib/email/nodemailer'
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    // Updated to use the recommended pattern with await
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+
     const { submissionId, action, feedback } = await request.json()
 
     // Log for debugging
