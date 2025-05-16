@@ -1,17 +1,26 @@
+import { NextRequest, NextResponse } from 'next/server'
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
   const path = req.nextUrl.pathname
 
-  // Check auth session
-  const { data: { session }, error } = await supabase.auth.getSession()
+  // Allow static files and Next.js internals
+  if (
+    path.startsWith('/_next') ||
+    path.startsWith('/static') ||
+    path.startsWith('/favicon.ico') ||
+    path.startsWith('/api')
+  ) {
+    return res
+  }
 
+  // Check auth session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // If not logged in, only allow access to the login page
   if (!session) {
-    // Redirect to login if not authenticated
     if (path !== '/') {
       return NextResponse.redirect(new URL('/', req.url))
     }
@@ -27,13 +36,16 @@ export async function middleware(req: NextRequest) {
 
   // Role-based routing
   if (userData?.role === 'developer') {
-    if (path === '/evaluate') {
+    if (path !== '/' && path !== '/submit') {
       return NextResponse.redirect(new URL('/submit', req.url))
     }
   } else if (userData?.role === 'evaluator') {
-    if (path === '/submit') {
+    if (path !== '/' && path !== '/evaluate') {
       return NextResponse.redirect(new URL('/evaluate', req.url))
     }
+  } else {
+    // If role is missing or invalid, force logout or redirect to login
+    return NextResponse.redirect(new URL('/', req.url))
   }
 
   return res
